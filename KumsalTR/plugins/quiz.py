@@ -146,9 +146,21 @@ async def get_snippet(name, vid_id=None):
     cookies = [None] + yt.cookies
     random.shuffle(cookies)
 
+    # User-Agent Rotasyonu
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    ]
+
     # First attempt: Direct URL (ID or Search)
     async def _try_download(url, tag):
-        for cookie in cookies:
+        # Deneme sırası: Cookiesiz -> Kayıtlı çerezler
+        attempts = [None] + list(cookies)
+        random.shuffle(attempts)
+
+        for cookie in attempts:
+            agent = random.choice(user_agents)
             for fmt in format_attempts:
                 opts = {
                     "quiet": True,
@@ -166,12 +178,15 @@ async def get_snippet(name, vid_id=None):
                     "nocheckcertificate": True,
                     "extractor_args": {
                         "youtube": {
+                            "player_client": ["web", "mweb", "tvhtml5"],
+                            "player_skip": ["webpage", "configs"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "User-Agent": agent,
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                        "Sec-Ch-Ua-Platform": "\"Windows\"",
                     }
                 }
                 def _dl(_o=opts, _u=url):
@@ -183,7 +198,16 @@ async def get_snippet(name, vid_id=None):
                         alt = f"downloads/quiz_{tag}.{ext}"
                         if os.path.exists(alt) and os.path.getsize(alt) > 1024:
                             return alt
-                except Exception:
+                except Exception as e:
+                    err_str = str(e).lower()
+                    if "sign in to confirm" in err_str:
+                        if cookie and cookie in yt.cookies:
+                            logger.warning(f"Quiz: Bozuk çerez siliniyor: {cookie}")
+                            try:
+                                yt.cookies.remove(cookie)
+                                os.remove(cookie)
+                            except: pass
+                        break
                     continue
         return None
 
