@@ -45,6 +45,8 @@ async def lyrics_callback(_, cb: types.CallbackQuery):
         return await cb.answer("Şᴜ ᴀɴ çᴀʟᴀɴ ʙɪʀ şᴀʀᴋɪ ʏᴏᴋ!", show_alert=True)
     
     title = media.title
+    channel = getattr(media, "channel_name", "")
+    
     # Clean up standard youtube suffixes
     clean_title = title.lower()
     for rm in ["(official video)", "[official video]", "official music video", "(lyrics)", "[lyrics]", "lyric video"]:
@@ -52,7 +54,8 @@ async def lyrics_callback(_, cb: types.CallbackQuery):
         
     await cb.answer("Şᴀʀᴋɪ sᴏ̈ᴢʟᴇʀɪ ᴀʀᴀɴɪʏᴏʀ, ʟᴜ̈ᴛғᴇɴ ʙᴇᴋʟᴇʏɪɴ...")
     
-    lyrics = await fetch_lyrics(clean_title.strip())
+    search_query = f"{clean_title.strip()} {channel}".strip()
+    lyrics = await fetch_lyrics(search_query)
     
     if lyrics:
         try:
