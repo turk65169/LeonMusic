@@ -28,6 +28,24 @@ TR_POP = [
     ("Zeynep Bastık - Felaket", "U2dyjNNWW3U"),
     ("Gülşen - Bangır Bangır", "3I8I0XmxKqs"),
     ("Kenan Doğulu - Shake It Up Şekerim", "p-TdmLKL4Ck"),
+    ("Mabel Matiz & Mert Demir - Antidepresan", "J51o4d9o6gE"),
+    ("Zeynep Bastık - Lan", "-O22D3EV6G0"),
+    ("Simge - Aşkın Olayım", "VREnTCTeS4k"),
+    ("Sefo - Bilmem Mi", "w3h_n1l3m2I"),
+    ("Mert Demir - Ateşe Düştüm", "lXv3lK-1y8o"),
+    ("Melike Şahin - Pusulam Rüzgar", "fW5PqN2m94o"),
+    ("Köfn - Bir Tek Ben Anlarım", "6g6W4p6W-H4"),
+    ("Semicenk - Canın Sağ Olsun", "7L9_Z8W3Y6G"),
+    ("Emir Can İğrek - Ali Cabbar", "U8V-W9Y6Z8H"),
+    ("Kardelen - Narin", "W8V-Z9H3Y6G"),
+    ("Derya Uluğ - Yansıma", "8G-Y9H6W3Z2"),
+    ("Hande Yener - Benden Sonra", "6G-W3Z2Y9H6"),
+    ("İrem Derici - Kalbimin Tek Sahibine", "Y-W3Z2G6H98"),
+    ("Murat Boz - Janti", "8G-Y6W3V9U7"),
+    ("Ajda Pekkan - Yakar Geçerim", "7F-W3Z2G9S1"),
+    ("Serdar Ortaç - Poşet", "8G-S9V3W2G1"),
+    ("Demet Akalın - Türkan", "7V-Z9H6S3W2"),
+    ("Mustafa Sandal - Araba", "6G-V9U7W3Z2"),
 ]
 
 TR_ARABESK = [
@@ -38,6 +56,40 @@ TR_ARABESK = [
     ("Orhan Gencebay - Batsın Bu Dünya", "JkP6T5O7wL4"),
     ("Bergen - Sen Ağlama", "IeJ6R3N4M8U"),
     ("Hakan Altun - Telefonun Başında", "KfH4M9wQ8R0"),
+    ("Müslüm Gürses - Affet", "gM9V4G_eF_0"),
+    ("Azer Bülbül - Çoğu Gitti Azı Kaldı", "x459c5d0m7U"),
+    ("Cengiz Kurtoğlu - Hain Geceler", "1y1f12P8xG0"),
+    ("Ferdi Tayfur - Huzurum Kalmadı", "8G_9Q4tM12Q"),
+    ("Kibariye - Sil Baştan", "W9V-Z8G3H6Q"),
+    ("Hakan Altun - Hani Bekleyecektin", "8G-Z9H3V6W2"),
+    ("Yıldız Tilbe - Delikanlım", "7V-G9S3W6Z1"),
+    ("Sibel Can - Padişah", "8G-Z9V3S1W6"),
+]
+
+TR_ROCK = [
+    ("Madrigal - Seni Dert Etmeler", "pW-4w9W8o-0"),
+    ("Adamlar - Zombi", "0_4lJ_0x8l0"),
+    ("Mor ve Ötesi - Bir Derdim Var", "S3Q1M5zG_pU"),
+    ("Teoman - Paramparça", "dJ8Gk1w5Z-c"),
+    ("Duman - Kufi", "c5409Wd9L98"),
+    ("Yüzyüzeyken Konuşuruz - Dinle Beni Bi", "8G-Y9H6S3V1"),
+    ("Manga - Cevapsız Sorular", "6G-W3Z2G9S1"),
+    ("Şebnem Ferah - Sil Baştan", "7V-Z9H6S3W2"),
+    ("Dedublüman - Belki", "8G-V9U7W3Z2"),
+    ("Hayko Cepkin - Fırtınam", "7F-W3Z2G9S1"),
+]
+
+TR_RAP = [
+    ("Ezhel - Deli Mi Ne", "aL9z1v9mI-k"),
+    ("Motive - 10MG", "1kS7V9oY-5E"),
+    ("Uzi - Arasan da", "V5v9lY8nE-s"),
+    ("Çakal - İmdat", "1l5Q9xW2z-s"),
+    ("Heijan & Muti - Davay Davay", "8G-Y9H6W3V1"),
+    ("Cakal - Lütfen", "7F-W3Z2G9S1"),
+    ("Batuflex - Dalga", "6G-W3Z2G9S1"),
+    ("Lvbel C5 - Doğuştan Beri", "7V-Z9H6S3W2"),
+    ("Block3 - Vur", "8G-V9U7W3Z2"),
+    ("Murda - Eh Baba", "7F-W3Z2G9S1"),
 ]
 
 EN_POP = [
@@ -56,6 +108,16 @@ EN_POP = [
     ("Drake - One Dance", "qL7zrWcc44c"),
     ("Doja Cat - Say So", "pok8H_KF1FA"),
     ("Post Malone - Circles", "wXhTHyIgQ_U"),
+    ("Billie Eilish - Birds of a Feather", "3_qV_42A5Qk"),
+    ("Taylor Swift - Anti-Hero", "b1kbLwvqugk"),
+    ("Sabrina Carpenter - Espresso", "eVli-tBUBSs"),
+    ("Harry Styles - Watermelon Sugar", "E07s5f96T-8"),
+    ("Katy Perry - Roar", "CevxZvSJLk8"),
+    ("Ed Sheeran - Shape of You", "JGwWNGJdvx8"),
+    ("Justin Bieber - Baby", "kffacxfqcws"),
+    ("The Kid LAROI & Justin Bieber - STAY", "8G-Y9H6W3V1"),
+    ("Lil Nas X - Montero", "7F-W3Z2G9S1"),
+    ("Bruno Mars - Uptown Funk", "6G-W3Z2G9S1"),
 ]
 
 def normalize(text):
@@ -169,6 +231,8 @@ async def quiz_callback_handler(client, cb: types.CallbackQuery):
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("🎙 ᴘᴏᴘ", callback_data="quiz_cat_tr_pop"),
                  InlineKeyboardButton("🍺 ᴀʀᴀʙᴇsᴋ", callback_data="quiz_cat_tr_arabesk")],
+                [InlineKeyboardButton("🎸 ʀᴏᴄᴋ", callback_data="quiz_cat_tr_rock"),
+                 InlineKeyboardButton("🎧 ʀᴀᴘ", callback_data="quiz_cat_tr_rap")],
                 [InlineKeyboardButton("⬅️ ɢᴇʀɪ", callback_data="quiz_back_main")]
             ])
             text = "🇹🇷 <b>Tᴜ̈ʀᴋᴄ̧ᴇ Kᴀᴛᴇɢᴏʀɪsɪ</b>\n\n👇 <b>Lᴜ̈ᴛғᴇɴ ᴍᴜ̈ᴢɪᴋ ᴛᴜ̈ʀᴜ̈ɴᴜ̈ sᴇᴄ̧ɪɴ:</b>"
@@ -216,6 +280,8 @@ async def quiz_callback_handler(client, cb: types.CallbackQuery):
         pool = []
         if lang_sel == "tr" and cat == "pop": pool = TR_POP
         elif lang_sel == "tr" and cat == "arabesk": pool = TR_ARABESK
+        elif lang_sel == "tr" and cat == "rock": pool = TR_ROCK
+        elif lang_sel == "tr" and cat == "rap": pool = TR_RAP
         elif lang_sel == "en" and cat == "pop": pool = EN_POP
         if not pool: pool = TR_POP
         
