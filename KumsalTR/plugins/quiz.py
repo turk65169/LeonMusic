@@ -7,7 +7,8 @@ import re
 import yt_dlp
 from pyrogram import filters, types
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from KumsalTR import app, db, lang, logger, config
+from pyrogram.errors import FloodWait
+from KumsalTR import app, db, lang, logger, config, yt
 
 # Active quizzes: {chat_id: {round_data...}}
 QUIZ_STATE: dict[int, dict] = {}
@@ -79,6 +80,11 @@ async def get_snippet(vid_id):
         }],
         "download_ranges": yt_dlp.utils.download_range_func(None, [(start, end)]),
         "force_keyframes_at_cuts": True,
+        "cookiefile": yt.get_cookies(),
+        "http_headers": {
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+            "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+        }
     }
     
     def _dl():
@@ -223,15 +229,21 @@ async def quiz_loop(chat_id):
             name, vid = random.choice(state["pool"])
             state["answer"] = name
             
-            await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
-            
+            try:
+                await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
+            except FloodWait as e:
+                await asyncio.sleep(e.value + 1)
+                await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
+
             snippet = await get_snippet(vid)
             
             if not snippet or not os.path.exists(snippet):
                 state["round"] -= 1
                 state["retry_count"] = state.get("retry_count", 0) + 1
                 if state["retry_count"] >= 3:
-                    await app.send_message(chat_id, "<b>⚠️ Şᴀʀᴋɪ ɪɴᴅɪʀɪʟᴇᴍɪʏᴏʀ, ᴀᴛʟᴀɴɪʏᴏʀ...</b>")
+                    try:
+                        await app.send_message(chat_id, "<b>⚠️ Şᴀʀᴋɪ ɪɴᴅɪʀɪʟᴇᴍɪʏᴏʀ, ᴀᴛʟᴀɴɪʏᴏʀ...</b>")
+                    except Exception: pass
                     state["retry_count"] = 0
                     state["round"] += 1
                 await asyncio.sleep(2)
@@ -241,6 +253,12 @@ async def quiz_loop(chat_id):
             
             try:
                 await app.send_voice(chat_id, snippet)
+            except FloodWait as e:
+                await asyncio.sleep(e.value + 1)
+                try:
+                    await app.send_voice(chat_id, snippet)
+                except Exception as e:
+                    logger.error(f"Quiz voice send error: {e}")
             except Exception as e:
                 logger.error(f"Quiz voice send error: {e}")
                 state["round"] -= 1
@@ -253,7 +271,11 @@ async def quiz_loop(chat_id):
             except asyncio.TimeoutError:
                 if not state["winner_found"].is_set() and state["active"]:
                     state["wrong_rounds"] += 1
-                    await app.send_message(chat_id, f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}")
+                    try:
+                        await app.send_message(chat_id, f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}")
+                    except FloodWait as e:
+                        await asyncio.sleep(e.value + 1)
+                        await app.send_message(chat_id, f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}")
                     state["answer"] = None
             
             if snippet and os.path.exists(snippet):
@@ -262,7 +284,7 @@ async def quiz_loop(chat_id):
                 except Exception:
                     pass
                 
-            await asyncio.sleep(4)
+            await asyncio.sleep(5)
 
         if state.get("active"):
             await end_quiz_logic(chat_id)
