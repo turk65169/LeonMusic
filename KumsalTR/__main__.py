@@ -5,7 +5,7 @@ import importlib
 
 from pyrogram import idle
 
-from KumsalTR import anon, app, db, logger, stop, userbot
+from KumsalTR import anon, app, config, db, logger, stop, userbot, yt
 from KumsalTR.plugins import all_modules
 
 
