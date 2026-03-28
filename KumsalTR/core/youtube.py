@@ -28,14 +28,16 @@ class YouTube:
 
     def get_cookies(self):
         if not self.checked:
-            for file in os.listdir(self.cookie_dir):
-                if file.endswith(".txt"):
-                    self.cookies.append(f"{self.cookie_dir}/{file}")
+            self.cookies = []
+            if os.path.exists(self.cookie_dir):
+                for file in os.listdir(self.cookie_dir):
+                    if file.endswith(".txt"):
+                        self.cookies.append(f"{self.cookie_dir}/{file}")
             self.checked = True
         if not self.cookies:
             if not self.warned:
                 self.warned = True
-                logger.warning("Cookies are missing; downloads might fail.")
+                logger.warning("Cookies are missing; YouTube might block the bot.")
             return None
         return random.choice(self.cookies)
 
@@ -120,7 +122,8 @@ class YouTube:
                 "best",
             ]
 
-        # Sırasıyla deniyoruz: Cookiesiz -> Rastgele Cookie -> Farklı User-Agent
+        # Sırasıyla deniyoruz: Cookiesiz -> Rastgele Cookie
+        self.get_cookies()  # Çerezleri yenile/kontrol et
         attempts = [None] + self.cookies
         random.shuffle(attempts)
 
@@ -138,12 +141,12 @@ class YouTube:
                     "source_address": "0.0.0.0",
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android", "ios", "mweb"],
+                            "player_client": ["ios", "mweb", "android"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
+                        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
                     }
                 }
