@@ -18,7 +18,7 @@ EMOJI_CHART = 5231200819986047254       # 📊 Grafik
 EMOJI_SKIP  = 5314606606678237326       # ↪️ Atla (Mavi ok)
 EMOJI_PAUSE = 5319190934510904031       # ⏳ Dur (Kum saati)
 EMOJI_STOP  = 5314346928660554905       # ⚠️ Durdur (Uyarı)
-EMOJI_REPLAY = 5314346928660554905       # ⚠️ Tekrar (Uyarı - Kullanıcı isteği)
+EMOJI_REPLAY = 5316553657087435063       # 🎧 Kulaklık (Kullanıcı isteği)
 
 
 def _get_enum_style(style_str: str):
