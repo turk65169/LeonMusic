@@ -1,0 +1,1 @@
+['text', 'callback_data', 'url', 'web_app', 'login_url', 'user_id', 'switch_inline_query', 'switch_inline_query_current_chat', 'callback_game', 'requires_password', 'copy_text']
