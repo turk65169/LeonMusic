@@ -176,13 +176,6 @@ async def get_snippet(name, vid_id=None):
                     "cookiefile": cookie,
                     "geo_bypass": True,
                     "nocheckcertificate": True,
-                    "extractor_args": {
-                        "youtube": {
-                            "player_client": ["android", "ios"],
-                            "player_skip": ["webpage", "configs"],
-                            "skip": ["dash", "hls"],
-                        }
-                    },
                     "http_headers": {
                         "User-Agent": agent,
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -445,4 +438,13 @@ async def quiz_answer_hndlr(_, m: types.Message):
         
         state["answer"] = None 
         state["winner_found"].set()
-        await m.reply_text(f"🎉 <b>
+        await m.reply_text(m.lang.get("quiz_winner", "🎉 <b>Tebrikler {0}, doğru bildin! (+10 Puan)</b>").format(m.from_user.mention, 10))
+
+@app.on_message(filters.command(["son", "bitir"]) & filters.group & ~app.blacklist_filter)
+async def end_quiz_early_cmd(_, m: types.Message):
+    chat_id = m.chat.id
+    if chat_id in QUIZ_STATE and QUIZ_STATE[chat_id].get("active"):
+        QUIZ_STATE[chat_id]["active"] = False
+        QUIZ_STATE[chat_id]["winner_found"].set()
+        await m.reply_text("<b>🛑 Yarışma erken sonlandırıldı!</b>")
+        await end_quiz_logic(chat_id)
