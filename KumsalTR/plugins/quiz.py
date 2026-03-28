@@ -79,6 +79,8 @@ async def get_snippet(name, vid_id=None):
         "best",
     ]
     
+    # Ensure cookies are loaded
+    yt.get_cookies()
     cookies = [None] + yt.cookies
     random.shuffle(cookies)
 
@@ -100,8 +102,14 @@ async def get_snippet(name, vid_id=None):
                     "cookiefile": cookie,
                     "geo_bypass": True,
                     "nocheckcertificate": True,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["android"],
+                            "skip": ["dash", "hls"],
+                        }
+                    },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+                        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36",
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
                     }
                 }
@@ -109,7 +117,7 @@ async def get_snippet(name, vid_id=None):
                     with yt_dlp.YoutubeDL(_o) as ydl:
                         ydl.download([_u])
                 try:
-                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=40)
+                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=30)
                     for ext in ["m4a", "mp3", "opus", "webm", "ogg"]:
                         alt = f"downloads/quiz_{tag}.{ext}"
                         if os.path.exists(alt) and os.path.getsize(alt) > 1024:
@@ -234,6 +242,7 @@ async def quiz_loop(chat_id):
     if not state: return
 
     try:
+        await app.send_message(chat_id, "<b>⚙️ Yᴀʀɪşᴍᴀ ʜᴀᴢɪʀʟᴀɴɪʏᴏʀ... Şᴀʀᴋɪʟᴀʀ ʏᴜ̈ᴋʟᴇɴɪʏᴏʀ, ʟᴜ̈ᴛғᴇɴ ʙᴇᴋʟᴇʏɪɴ.</b>")
         while state["active"]:
             if state["round"] >= state["max_rounds"]:
                 break
@@ -251,7 +260,10 @@ async def quiz_loop(chat_id):
             snippet = await get_snippet(name, vid)
             
             if not snippet or not os.path.exists(snippet):
-                logger.error(f"Quiz snippet failed for {vid}, skipping this track.")
+                logger.error(f"Quiz snippet failed for {name}, skipping this track.")
+                try:
+                    await app.send_message(chat_id, f"⚠️ <b>{name}</b> ɪɴᴅɪʀɪʟᴇᴍᴇᴅɪ, ᴀᴛʟᴀɴɪʏᴏʀ... (Bᴏᴛ ᴇɴɢᴇʟɪ ᴠᴇʏᴀ ᴠɪᴅᴇᴏ ᴍᴇᴠᴄᴜᴛ ᴅᴇɢ̆ɪʟ)")
+                except: pass
                 await asyncio.sleep(2)
                 continue
             
@@ -342,6 +354,3 @@ async def quiz_answer_hndlr(_, m: types.Message):
         try: await db.add_quiz_score(uid, 10)
         except: pass
         
-        state["answer"] = None 
-        state["winner_found"].set()
-        await m.reply_text(f"🎉 <b>Tᴇʙʀɪᴋʟᴇʀ {m.from_user.mention}!</b>\n\nDᴏᴅ̆ʀᴜ ʙɪʟᴅɪɴ ᴠᴇ <b>+10</b> ᴘᴜᴀɴ ᴋᴀᴢᴀɴᴅɪɴ!")
