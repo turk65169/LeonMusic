@@ -15,12 +15,12 @@ QUIZ_STATE: dict[int, dict] = {}
 
 TR_POP = [
     ("Mabel Matiz - Sarışın", "WYSnXJYFfTg"),
-    ("Semicenk - Pişman Değilim", "WreX7kI5O08"),
+    ("Semicenk - Pişman Değilim", "U8n6x1G1h_Y"),
     ("Tarkan - Kuzu Kuzu", "G7LN-Y-R3GY"),
     ("Sezen Aksu - Geri Dön", "WRbfRZCvCHs"),
     ("Barış Manço - Gülpembe", "Hpt3lS_6vIc"),
     ("Teoman - İstanbul'da Sonbahar", "J6IOMvSvKyU"),
-    ("Mor ve Ötesi - Cambaz", "TFY-5RLSM8Y"),
+    ("Mor ve Ötesi - Cambaz", "w4j3h6c738U"),
     ("Manga - Dursun Zaman", "HhrY23GQEBU"),
     ("Simge - Yankı", "v31e6S-c3CA"),
     ("Edis - Çok Çok", "H-RgAqgqLNA"),
@@ -46,7 +46,7 @@ EN_POP = [
     ("Harry Styles - As It Was", "H5v3kku4y6Q"),
     ("Sia - Unstoppable", "cxjvTXo9WWM"),
     ("Rihanna - Diamonds", "lWA2pjMjpBs"),
-    ("Imagine Dragons - Believer", "7wtfhZwyrcc"),
+    ("Imagine Dragons - Believer", "7t2MexigGRs"),
     ("Coldplay - Yellow", "yKNxeF4KMsY"),
     ("Linkin Park - In the End", "eVTXPUF4Oz4"),
     ("Eminem - Without Me", "YVkUvmDQ-as"),
@@ -61,64 +61,74 @@ EN_POP = [
 def normalize(text):
     return re.sub(r'[^a-zA-Z0-9]', '', text.lower())
 
-async def get_snippet(vid_id):
-    path = f"downloads/quiz_{vid_id}.m4a"
+async def get_snippet(name, vid_id=None):
+    # Try ID first if provided
+    current_url = f"https://www.youtube.com/watch?v={vid_id}" if vid_id else f"ytsearch1:{name}"
+    file_tag = vid_id if vid_id else normalize(name)[:10]
+    path = f"downloads/quiz_{file_tag}.m4a"
+
     if os.path.exists(path) and os.path.getsize(path) > 1024:
         return path
     
     start = random.randint(30, 90)
     end = start + 30
     
-    # format_attempts logic similar to youtube.py
     format_attempts = [
         "bestaudio[ext=m4a]/bestaudio/best",
         "bestaudio/best",
         "best",
     ]
     
-    # Try cookies rotation if needed
     cookies = [None] + yt.cookies
     random.shuffle(cookies)
 
-    for cookie in cookies:
-        for fmt in format_attempts:
-            opts = {
-                "quiet": True,
-                "no_warnings": True,
-                "format": fmt,
-                "outtmpl": f"downloads/quiz_{vid_id}.%(ext)s",
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "m4a",
-                }],
-                "download_ranges": yt_dlp.utils.download_range_func(None, [(start, end)]),
-                "force_keyframes_at_cuts": True,
-                "cookiefile": cookie,
-                "geo_bypass": True,
-                "nocheckcertificate": True,
-                "http_headers": {
-                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
-                    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+    # First attempt: Direct URL (ID or Search)
+    async def _try_download(url, tag):
+        for cookie in cookies:
+            for fmt in format_attempts:
+                opts = {
+                    "quiet": True,
+                    "no_warnings": True,
+                    "format": fmt,
+                    "outtmpl": f"downloads/quiz_{tag}.%(ext)s",
+                    "postprocessors": [{
+                        "key": "FFmpegExtractAudio",
+                        "preferredcodec": "m4a",
+                    }],
+                    "download_ranges": yt_dlp.utils.download_range_func(None, [(start, end)]),
+                    "force_keyframes_at_cuts": True,
+                    "cookiefile": cookie,
+                    "geo_bypass": True,
+                    "nocheckcertificate": True,
+                    "http_headers": {
+                        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+                        "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                    }
                 }
-            }
-            
-            def _dl(_o=opts):
-                with yt_dlp.YoutubeDL(_o) as ydl:
-                    ydl.download([f"https://www.youtube.com/watch?v={vid_id}"])
-            
-            try:
-                if not os.path.exists("downloads"): os.makedirs("downloads")
-                await asyncio.wait_for(asyncio.to_thread(_dl), timeout=45)
-                
-                # Check for output
-                for ext in ["m4a", "mp3", "opus", "webm", "ogg"]:
-                    alt = f"downloads/quiz_{vid_id}.{ext}"
-                    if os.path.exists(alt) and os.path.getsize(alt) > 1024:
-                        return alt
-            except Exception as e:
-                logger.debug(f"Quiz dl attempt failed ({fmt}): {e}")
-                continue
-                
+                def _dl(_o=opts, _u=url):
+                    with yt_dlp.YoutubeDL(_o) as ydl:
+                        ydl.download([_u])
+                try:
+                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=40)
+                    for ext in ["m4a", "mp3", "opus", "webm", "ogg"]:
+                        alt = f"downloads/quiz_{tag}.{ext}"
+                        if os.path.exists(alt) and os.path.getsize(alt) > 1024:
+                            return alt
+                except Exception:
+                    continue
+        return None
+
+    # Step 1: Try current_url
+    result = await _try_download(current_url, file_tag)
+    if result:
+        return result
+
+    # Step 2: If we had an ID and it failed, try search as fallback
+    if vid_id:
+        logger.warning(f"ID {vid_id} failed for {name}, trying search fallback...")
+        result = await _try_download(f"ytsearch1:{name}", file_tag)
+        return result
+
     return None
 
 @app.on_message(filters.command(["yarisma"]) & filters.group & ~app.blacklist_filter)
@@ -238,7 +248,7 @@ async def quiz_loop(chat_id):
             name, vid = random.choice(state["pool"])
             
             # ADIM 1: Önce Snippet İndir (Duplicate mesajları engellemek için)
-            snippet = await get_snippet(vid)
+            snippet = await get_snippet(name, vid)
             
             if not snippet or not os.path.exists(snippet):
                 logger.error(f"Quiz snippet failed for {vid}, skipping this track.")
