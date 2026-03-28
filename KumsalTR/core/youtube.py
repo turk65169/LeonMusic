@@ -109,16 +109,12 @@ class YouTube:
             for file in os.listdir("KumsalTR/cookies"):
                 if file.endswith(".txt"):
                     path = os.path.join("KumsalTR/cookies", file)
-                    # Basit doğrulama: Netscape formatı kontrolü
                     try:
                         with open(path, "r", encoding="utf-8", errors="ignore") as f:
                             content = f.read(512)
                             if "# Netscape" in content or "youtube.com" in content:
                                 self.cookies.append(path)
-                            else:
-                                logger.warning(f"Geçersiz çerez formatı (atlandı): {file}")
-                    except Exception as e:
-                        logger.error(f"Çerez okuma hatası {file}: {e}")
+                    except: pass
             self.checked = True
         return self.cookies
 
@@ -132,19 +128,33 @@ class YouTube:
 
         if not self.cookies:
             self.get_cookies()
+            
+        # KRİTİK ÖNLEM: Eğer çerez kalmadıysa ve URL varsa otomatik yenile
+        if not self.cookies and config.COOKIES_URL:
+            logger.info("Çerez havuzu boşaldı, buluttan yenileniyor...")
+            try:
+                await self.save_cookies(config.COOKIES_URL)
+                self.checked = False
+                self.get_cookies()
+            except: pass
 
         format_attempts = [
             "bestvideo[height<=?720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=?720]+bestaudio/best[height<=?720]/best" if video else "bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best",
-            "bestaudio/best" if not video else "bestvideo[height<=?720]+bestaudio/best",
-            "best",
+            "bestaudio/best", "best",
         ]
 
-        # Deneme sırası: Taze çerezler -> Cookiesiz -> Tüm çerezler (random)
-        attempts = list(self.cookies)
+        # User-Agent Rotasyonu
+        user_agents = [
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        ]
+
+        attempts = [None] + list(self.cookies)
         random.shuffle(attempts)
-        attempts = [None] + attempts # Önce cookiesiz denemek bazen daha iyidir (IP temizse)
 
         for cookie in attempts:
+            agent = random.choice(user_agents)
             for fmt in format_attempts:
                 ydl_opts = {
                     "outtmpl": "downloads/%(id)s.%(ext)s",
@@ -155,38 +165,40 @@ class YouTube:
                     "cookiefile": cookie,
                     "extractor_args": {
                         "youtube": {
+                            "player_client": ["web", "mweb", "tvhtml5"],
+                            "player_skip": ["webpage", "configs"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                        "User-Agent": agent,
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                        "Sec-Ch-Ua-Platform": "\"Windows\"",
+                        "Sec-Ch-Ua": "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"122\", \"Chromium\";v=\"122\"",
                     },
                     "format": fmt,
                 }
-                if video:
-                    ydl_opts["merge_output_format"] = "mp4"
-
+                
                 try:
                     def _dl(_opts=ydl_opts, _url=url):
                         with yt_dlp.YoutubeDL(_opts) as ydl:
                             ydl.download([_url])
 
-                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=60)
+                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=70)
                     if os.path.exists(filename):
                         return filename
-                    for f in Path("downloads").glob(f"{video_id}.*"):
-                        return str(f)
                 except Exception as e:
-                    err_str = str(e).lower()
-                    if "sign in to confirm" in err_str or "unsupported" in err_str:
+                    err = str(e).lower()
+                    if "po-token" in err or "403" in err:
+                        logger.warning("PO-Token veya 403 hatası, bu yöntem atlanıyor...")
+                        break 
+                    if "sign in to confirm" in err:
                         if cookie and cookie in self.cookies:
-                            logger.warning(f"Hatalı/Süresi dolmuş çerez tespit edildi: {cookie}")
+                            logger.error(f"Geçersiz çerez: {os.path.basename(cookie)}")
                             try:
                                 self.cookies.remove(cookie)
-                                os.remove(cookie) # Bozuk dosyayı sil
+                                os.remove(cookie)
                             except: pass
-                        break # Bu çerez ile devam etme, sonrakine geç
+                        break
                     continue
-
         return None
