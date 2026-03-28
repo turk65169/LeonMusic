@@ -12,8 +12,11 @@ from KumsalTR import app, config, db, logger, queue, yt
 from KumsalTR.helpers import utils
 
 
+from functools import wraps
+
 def checkUB(play):
-    async def wrapper(_, m: types.Message):
+    @wraps(play)
+    async def wrapper(_, m: types.Message, *args, **kwargs):
         if not m.from_user:
             return await m.reply_text(m.lang["play_user_invalid"])
 
@@ -24,18 +27,28 @@ def checkUB(play):
 
         if not m.reply_to_message and (
             len(m.command) < 2 or (len(m.command) == 2 and m.command[1] == "-f")
-        ):
+        ) and not kwargs.get("url"):
             return await m.reply_text(m.lang["play_usage"])
 
         if len(queue.get_queue(chat_id)) >= config.QUEUE_LIMIT:
             return await m.reply_text(m.lang["play_queue_full"].format(config.QUEUE_LIMIT))
 
-        force = m.command[0].endswith("force") or (
-            len(m.command) > 1 and "-f" in m.command[1]
-        )
-        video = m.command[0][0] == "v" and config.VIDEO_PLAY
-        url = utils.get_url(m)
-        m3u8 = url and not yt.valid(url)
+        # Use passed arguments if available, otherwise calculate from message
+        force = kwargs.get("force")
+        if force is None:
+            force = m.command[0].endswith("force") or (
+                len(m.command) > 1 and "-f" in m.command[1]
+            )
+            
+        video = kwargs.get("video")
+        if video is None:
+            video = m.command[0][0] == "v" and config.VIDEO_PLAY
+            
+        url = kwargs.get("url") or utils.get_url(m)
+        
+        m3u8 = kwargs.get("m3u8")
+        if m3u8 is None:
+            m3u8 = url and not yt.valid(url)
 
         play_mode = await db.get_play_mode(chat_id)
         if play_mode or force:
