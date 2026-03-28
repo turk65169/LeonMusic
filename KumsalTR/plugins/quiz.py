@@ -104,12 +104,11 @@ async def get_snippet(name, vid_id=None):
                     "nocheckcertificate": True,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
                     }
                 }
@@ -354,3 +353,6 @@ async def quiz_answer_hndlr(_, m: types.Message):
         try: await db.add_quiz_score(uid, 10)
         except: pass
         
+        state["answer"] = None 
+        state["winner_found"].set()
+        await m.reply_text(f"🎉 <b>Tᴇʙʀɪᴋʟᴇʀ {m.from_user.mention}!</b>\n\nDᴏᴅ̆ʀᴜ ʙɪʟᴅɪɴ ᴠᴇ <b>+10</b> ᴘᴜᴀɴ ᴋᴀᴢᴀɴᴅɪɴ!")
