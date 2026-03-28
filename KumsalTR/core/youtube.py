@@ -164,13 +164,6 @@ class YouTube:
                     "geo_bypass": True,
                     "nocheckcertificate": True,
                     "cookiefile": cookie,
-                    "extractor_args": {
-                        "youtube": {
-                            "player_client": ["android", "ios"],
-                            "player_skip": ["webpage", "configs"],
-                            "skip": ["dash", "hls"],
-                        }
-                    },
                     "http_headers": {
                         "User-Agent": agent,
                         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -208,6 +201,9 @@ class YouTube:
                         break
                     continue
         return None
+
+
+
 
 
 
