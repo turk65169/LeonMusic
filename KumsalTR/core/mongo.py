@@ -269,6 +269,18 @@ class MongoDB:
             upsert=True,
         )
 
+    # LINKED CHAT METHODS
+    async def get_linked_chat(self, chat_id: int) -> int | None:
+        doc = await self.chatsdb.find_one({"_id": chat_id})
+        return doc.get("linked_chat") if doc else None
+
+    async def set_linked_chat(self, chat_id: int, linked_chat_id: int | None) -> None:
+        await self.chatsdb.update_one(
+            {"_id": chat_id},
+            {"$set": {"linked_chat": linked_chat_id}},
+            upsert=True,
+        )
+
     # SUDO METHODS
     async def add_sudo(self, user_id: int) -> None:
         await self.cache.update_one(
