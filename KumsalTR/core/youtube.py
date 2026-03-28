@@ -108,51 +108,37 @@ class YouTube:
         if Path(filename).exists():
             return filename
 
-        # Birden fazla format denemesi: en iyisinden en esnekine
-        if video:
-            format_attempts = [
-                "bestvideo[height<=?720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=?720]+bestaudio/best[height<=?720]/best",
-                "bestvideo[height<=?720]+bestaudio/best",
-                "best",
-            ]
-        else:
-            format_attempts = [
-                "bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best",
-                "bestaudio/best",
-                "best",
-            ]
+        if not self.cookies:
+            self.get_cookies()
 
-        # Sırasıyla deniyoruz: Cookiesiz -> Rastgele Cookie
-        self.get_cookies()  # Çerezleri yenile/kontrol et
+        format_attempts = [
+            "bestvideo[height<=?720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=?720]+bestaudio/best[height<=?720]/best" if video else "bestaudio[ext=webm]/bestaudio[ext=m4a]/bestaudio/best",
+            "bestaudio/best" if not video else "bestvideo[height<=?720]+bestaudio/best",
+            "best",
+        ]
+
         attempts = [None] + self.cookies
         random.shuffle(attempts)
 
         for cookie in attempts:
             for fmt in format_attempts:
-                base_opts = {
+                ydl_opts = {
                     "outtmpl": "downloads/%(id)s.%(ext)s",
                     "quiet": True,
                     "noplaylist": True,
                     "geo_bypass": True,
-                    "no_warnings": True,
-                    "overwrites": False,
                     "nocheckcertificate": True,
                     "cookiefile": cookie,
-                    "source_address": "0.0.0.0",
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["ios", "mweb", "android"],
+                            "player_client": ["android", "ios", "mweb"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
-                        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
                         "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-                    }
-                }
-
-                ydl_opts = {
-                    **base_opts,
+                    },
                     "format": fmt,
                 }
                 if video:
@@ -164,23 +150,12 @@ class YouTube:
                             ydl.download([_url])
 
                     await asyncio.to_thread(_dl)
-                    # İndirilen dosyayı kontrol et (yt-dlp farklı uzantı koymuş olabilir)
                     if os.path.exists(filename):
                         return filename
-                    # Farklı uzantıyla kaydedilmişse bul
                     for f in Path("downloads").glob(f"{video_id}.*"):
                         return str(f)
                 except Exception as e:
-                    err_str = str(e)
-                    logger.debug(f"Download attempt failed (fmt={fmt}, cookie={cookie}): {e}")
-                    if "Requested format" in err_str:
-                        continue  # Sonraki format denemesine geç
-                    if "Sign in to confirm" in err_str or "Incomplete data" in err_str:
-                        if cookie and cookie in self.cookies:
-                            self.cookies.remove(cookie)
-                            if not self.cookies:
-                                self.checked = False
-                        break  # Bu cookie bozuk, sonraki cookie'ye geç
+                    logger.debug(f"Download error: {e}")
                     continue
 
         return None
