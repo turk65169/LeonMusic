@@ -166,7 +166,7 @@ class YouTube:
                     "cookiefile": cookie,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android", "ios", "web", "mweb", "tvhtml5"],
+                            "player_client": ["android", "ios"],
                             "player_skip": ["webpage", "configs"],
                             "skip": ["dash", "hls"],
                         }
@@ -195,8 +195,8 @@ class YouTube:
                         return filename
                 except Exception as e:
                     err = str(e).lower()
-                    if "po-token" in err or "403" in err:
-                        logger.warning("PO-Token veya 403 hatası, bu yöntem atlanıyor...")
+                    if "403" in err:
+                        logger.warning("403 hatası, bu yöntem atlanıyor...")
                         break 
                     if "sign in to confirm" in err:
                         if cookie and cookie in self.cookies:
@@ -208,4 +208,6 @@ class YouTube:
                         break
                     continue
         return None
+
+
 
