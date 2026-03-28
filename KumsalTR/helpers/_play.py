@@ -20,10 +20,24 @@ def checkUB(play):
         if not m.from_user:
             return await m.reply_text(m.lang["play_user_invalid"])
 
-        chat_id = m.chat.id
-        if m.chat.type != enums.ChatType.SUPERGROUP:
+        # Resolve target chat_id for channel play
+        if m.command and m.command[0].startswith("c") and m.chat.type != enums.ChatType.CHANNEL:
+            chat_id = await db.get_linked_chat(m.chat.id)
+            if not chat_id:
+                return await m.reply_text("📡 **Önce bir kanal bağlamalısınız!**\n\nKullanım: `/kanal [Kanal ID]`")
+        else:
+            chat_id = m.chat.id
+
+        if m.chat.type not in [enums.ChatType.SUPERGROUP, enums.ChatType.CHANNEL]:
             await m.reply_text(m.lang["play_chat_invalid"])
-            return await app.leave_chat(chat_id)
+            try:
+                if m.chat.type == enums.ChatType.PRIVATE:
+                     pass
+                else: 
+                     await app.leave_chat(m.chat.id)
+            except:
+                pass
+            return
 
         if not m.reply_to_message and (
             len(m.command) < 2 or (len(m.command) == 2 and m.command[1] == "-f")
@@ -84,15 +98,16 @@ def checkUB(play):
             except errors.ChatAdminRequired:
                 return await m.reply_text(m.lang["admin_required"])
             except (errors.UserNotParticipant, errors.exceptions.bad_request_400.UserNotParticipant):
-                if m.chat.username:
-                    invite_link = m.chat.username
+                chat = await app.get_chat(chat_id)
+                if chat.username:
+                    invite_link = chat.username
                     try:
                         await client.resolve_peer(invite_link)
                     except:
                         pass
                 else:
                     try:
-                        invite_link = (await app.get_chat(chat_id)).invite_link
+                        invite_link = chat.invite_link
                         if not invite_link:
                             invite_link = await app.export_chat_invite_link(chat_id)
                     except errors.ChatAdminRequired:
