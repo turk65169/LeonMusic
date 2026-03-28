@@ -276,13 +276,13 @@ class Inline:
             [
                 [
                     _ikb(
-                        text="▶️ ᴏʏɴᴀᴛ",
+                        text="ᴏʏɴᴀᴛ",
                         callback_data=f"play_track {cmd} {track_id}",
                         style="success",
                         icon_custom_emoji_id=EMOJI_NOTE,
                     ),
                     _ikb(
-                        text="📥 ɪ̇ɴᴅɪʀ",
+                        text="ɪ̇ɴᴅɪʀ",
                         callback_data=f"play_track indir {track_id}",
                         style="primary",
                         icon_custom_emoji_id=EMOJI_LOAD,
