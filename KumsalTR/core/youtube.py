@@ -143,11 +143,12 @@ class YouTube:
             "bestaudio/best", "best",
         ]
 
-        # User-Agent Rotasyonu
+        # Daha geniş User-Agent Rotasyonu
         user_agents = [
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
         ]
 
         attempts = [None] + list(self.cookies)
@@ -165,16 +166,21 @@ class YouTube:
                     "cookiefile": cookie,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["web", "mweb", "tvhtml5"],
+                            "player_client": ["android", "ios", "web", "mweb", "tvhtml5"],
                             "player_skip": ["webpage", "configs"],
                             "skip": ["dash", "hls"],
                         }
                     },
                     "http_headers": {
                         "User-Agent": agent,
-                        "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-                        "Sec-Ch-Ua-Platform": "\"Windows\"",
-                        "Sec-Ch-Ua": "\"Not A(Brand\";v=\"99\", \"Google Chrome\";v=\"122\", \"Chromium\";v=\"122\"",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                        "Accept-Language": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3",
+                        "Connection": "keep-alive",
+                        "Upgrade-Insecure-Requests": "1",
+                        "Sec-Fetch-Dest": "document",
+                        "Sec-Fetch-Mode": "navigate",
+                        "Sec-Fetch-Site": "none",
+                        "Sec-Fetch-User": "?1",
                     },
                     "format": fmt,
                 }
@@ -202,3 +208,4 @@ class YouTube:
                         break
                     continue
         return None
+
