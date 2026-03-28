@@ -69,43 +69,56 @@ async def get_snippet(vid_id):
     start = random.randint(30, 90)
     end = start + 30
     
-    opts = {
-        "quiet": True,
-        "no_warnings": True,
-        "format": "bestaudio/best",
-        "outtmpl": f"downloads/quiz_{vid_id}.%(ext)s",
-        "postprocessors": [{
-            "key": "FFmpegExtractAudio",
-            "preferredcodec": "m4a",
-        }],
-        "download_ranges": yt_dlp.utils.download_range_func(None, [(start, end)]),
-        "force_keyframes_at_cuts": True,
-        "cookiefile": yt.get_cookies(),
-        "http_headers": {
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
-            "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-        }
-    }
+    # format_attempts logic similar to youtube.py
+    format_attempts = [
+        "bestaudio[ext=m4a]/bestaudio/best",
+        "bestaudio/best",
+        "best",
+    ]
     
-    def _dl():
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            ydl.download([f"https://www.youtube.com/watch?v={vid_id}"])
-    
-    try:
-        if not os.path.exists("downloads"):
-            os.makedirs("downloads")
-        await asyncio.wait_for(asyncio.to_thread(_dl), timeout=60)
-    except asyncio.TimeoutError:
-        logger.error(f"Quiz download timeout for {vid_id}")
-        return None
-    except Exception as e:
-        logger.error(f"Quiz download error for {vid_id}: {e}")
-        return None
-        
-    for ext in ["m4a", "mp3", "opus", "webm", "ogg"]:
-        alt = f"downloads/quiz_{vid_id}.{ext}"
-        if os.path.exists(alt) and os.path.getsize(alt) > 1024:
-            return alt
+    # Try cookies rotation if needed
+    cookies = [None] + yt.cookies
+    random.shuffle(cookies)
+
+    for cookie in cookies:
+        for fmt in format_attempts:
+            opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "format": fmt,
+                "outtmpl": f"downloads/quiz_{vid_id}.%(ext)s",
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "m4a",
+                }],
+                "download_ranges": yt_dlp.utils.download_range_func(None, [(start, end)]),
+                "force_keyframes_at_cuts": True,
+                "cookiefile": cookie,
+                "geo_bypass": True,
+                "nocheckcertificate": True,
+                "http_headers": {
+                    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+                    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
+                }
+            }
+            
+            def _dl(_o=opts):
+                with yt_dlp.YoutubeDL(_o) as ydl:
+                    ydl.download([f"https://www.youtube.com/watch?v={vid_id}"])
+            
+            try:
+                if not os.path.exists("downloads"): os.makedirs("downloads")
+                await asyncio.wait_for(asyncio.to_thread(_dl), timeout=45)
+                
+                # Check for output
+                for ext in ["m4a", "mp3", "opus", "webm", "ogg"]:
+                    alt = f"downloads/quiz_{vid_id}.{ext}"
+                    if os.path.exists(alt) and os.path.getsize(alt) > 1024:
+                        return alt
+            except Exception as e:
+                logger.debug(f"Quiz dl attempt failed ({fmt}): {e}")
+                continue
+                
     return None
 
 @app.on_message(filters.command(["yarisma"]) & filters.group & ~app.blacklist_filter)
@@ -187,13 +200,11 @@ async def quiz_callback_handler(client, cb: types.CallbackQuery):
         if lang_sel == "tr" and cat == "pop": pool = TR_POP
         elif lang_sel == "tr" and cat == "arabesk": pool = TR_ARABESK
         elif lang_sel == "en" and cat == "pop": pool = EN_POP
-        
         if not pool: pool = TR_POP
         
         try:
             await cb.message.delete()
-        except Exception:
-            pass
+        except: pass
         
         QUIZ_STATE[chat_id] = {
             "round": 0,
@@ -204,142 +215,123 @@ async def quiz_callback_handler(client, cb: types.CallbackQuery):
             "winner_found": asyncio.Event(),
             "active": True,
             "pool": list(pool),
-            "retry_count": 0,
         }
         
         asyncio.create_task(quiz_loop(chat_id))
 
 async def quiz_loop(chat_id):
     state = QUIZ_STATE.get(chat_id)
-    if not state:
-        return
+    if not state: return
 
     try:
         while state["active"]:
             if state["round"] >= state["max_rounds"]:
                 break
-                
-            state["round"] += 1
-            state["winner_found"].clear()
             
-            if state["wrong_rounds"] >= 4:
-                await app.send_message(chat_id, "<b>🚫 Üsᴛ ᴜ̈sᴛᴇ 4 ᴋᴇᴢ ᴋɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ! Yᴀʀɪşᴍᴀ ɪᴘᴛᴀʟ ᴇᴅɪʟᴅɪ.</b>")
+            if state["wrong_rounds"] >= 5:
+                # Arka arkaya kimse bilmediğinde botu yormamak için sonlandır
+                try:
+                    await app.send_message(chat_id, "<b>🚫 Üsᴛ ᴜ̈sᴛᴇ 5 ᴋᴇᴢ ᴋɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ! Yᴀʀɪşᴍᴀ Sᴏɴʟᴀɴᴅɪ.</b>")
+                except: pass
                 break
 
             name, vid = random.choice(state["pool"])
-            state["answer"] = name
             
-            try:
-                await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
-            except FloodWait as e:
-                await asyncio.sleep(e.value + 1)
-                await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
-
+            # ADIM 1: Önce Snippet İndir (Duplicate mesajları engellemek için)
             snippet = await get_snippet(vid)
             
             if not snippet or not os.path.exists(snippet):
-                state["round"] -= 1
-                state["retry_count"] = state.get("retry_count", 0) + 1
-                if state["retry_count"] >= 3:
-                    try:
-                        await app.send_message(chat_id, "<b>⚠️ Şᴀʀᴋɪ ɪɴᴅɪʀɪʟᴇᴍɪʏᴏʀ, ᴀᴛʟᴀɴɪʏᴏʀ...</b>")
-                    except Exception: pass
-                    state["retry_count"] = 0
-                    state["round"] += 1
+                logger.error(f"Quiz snippet failed for {vid}, skipping this track.")
                 await asyncio.sleep(2)
                 continue
             
-            state["retry_count"] = 0
+            # ADIM 2: Snippet hazır olduktan sonra Turu Başlat
+            state["round"] += 1
+            state["winner_found"].clear()
+            state["answer"] = name
             
             try:
-                await app.send_voice(chat_id, snippet)
+                round_msg = await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
             except FloodWait as e:
                 await asyncio.sleep(e.value + 1)
-                try:
-                    await app.send_voice(chat_id, snippet)
-                except Exception as e:
-                    logger.error(f"Quiz voice send error: {e}")
+                round_msg = await app.send_message(chat_id, f"🎵 <b>{state['round']}. Tᴜʀ Bᴀşʟᴀᴅɪ!</b>\n\n⌚ <b>30 sᴀɴɪʏᴇɴɪᴢ ᴠᴀʀ!</b>")
+
+            try:
+                voice_msg = await app.send_voice(chat_id, snippet)
             except Exception as e:
                 logger.error(f"Quiz voice send error: {e}")
-                state["round"] -= 1
-                await asyncio.sleep(2)
+                if os.path.exists(snippet): os.remove(snippet)
                 continue
             
+            # ADIM 3: Kazananı veya Zaman Aşımını Bekle
             try:
                 await asyncio.wait_for(state["winner_found"].wait(), timeout=30)
                 state["wrong_rounds"] = 0
             except asyncio.TimeoutError:
                 if not state["winner_found"].is_set() and state["active"]:
                     state["wrong_rounds"] += 1
+                    ans_text = f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}"
                     try:
-                        await app.send_message(chat_id, f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}")
+                        await app.send_message(chat_id, ans_text)
                     except FloodWait as e:
                         await asyncio.sleep(e.value + 1)
-                        await app.send_message(chat_id, f"❌ <b>Sᴜ̈ʀᴇ ᴅᴏʟᴅᴜ! Kɪᴍsᴇ ʙɪʟᴇᴍᴇᴅɪ.</b>\n\n🎵 <b>Cᴇᴠᴀᴘ:</b> {name}")
+                        await app.send_message(chat_id, ans_text)
                     state["answer"] = None
             
+            # Temizlik
             if snippet and os.path.exists(snippet):
-                try:
-                    os.remove(snippet)
-                except Exception:
-                    pass
+                try: os.remove(snippet)
+                except: pass
                 
-            await asyncio.sleep(5)
+            # Tur arası bekleme (FloodWait riskini azaltmak için)
+            await asyncio.sleep(7)
 
         if state.get("active"):
             await end_quiz_logic(chat_id)
+            
     except Exception as e:
         logger.error(f"Quiz loop error for {chat_id}: {e}")
         QUIZ_STATE.pop(chat_id, None)
 
 async def end_quiz_logic(chat_id):
     state = QUIZ_STATE.get(chat_id)
-    if not state:
-        return
+    if not state: return
     
     scores_dict = state["scores"]
     results_text = "<b>Kɪᴍsᴇ ᴘᴜᴀɴ ᴀʟᴀᴍᴀᴅɪ!</b>"
     
     if scores_dict:
         sorted_sc = sorted(scores_dict.items(), key=lambda x: x[1][1], reverse=True)
-        results_text = ""
+        results_text = "<b>🥇 Tᴏᴘʟᴀᴍ Pᴜᴀɴ Sɪʀᴀʟᴀᴍᴀsɪ:</b>\n\n"
         for i, (uid, (mention, pts)) in enumerate(sorted_sc, 1):
-            results_text += f"{i}. {mention} ({pts} Pᴜᴀɴ)\n"
+            results_text += f"{i}. {mention} → <b>{pts} Pᴜᴀɴ</b>\n"
             
-    await app.send_message(chat_id, f"🏆 <b>Yᴀʀɪşᴍᴀ Sᴏɴᴜᴄ̧ʟᴀʀɪ</b>\n\n{results_text}")
+    try:
+        await app.send_message(chat_id, f"🏆 <b>Yᴀʀɪşᴍᴀ Sᴏɴᴜᴄ̧ʟᴀʀɪ</b>\n\n{results_text}")
+    except: pass
     QUIZ_STATE.pop(chat_id, None)
 
 @app.on_message(filters.text & filters.group & ~app.blacklist_filter, group=10)
 async def quiz_answer_hndlr(_, m: types.Message):
     chat_id = m.chat.id
-    if chat_id not in QUIZ_STATE:
-        return
+    if chat_id not in QUIZ_STATE: return
     
     state = QUIZ_STATE[chat_id]
-    if not state.get("answer"):
-        return
-    if not m.from_user:
-        return
+    if not state.get("active") or not state.get("answer"): return
+    if not m.from_user: return
     
     guess = normalize(m.text)
     answer = normalize(state["answer"])
     
-    if len(guess) < 3:
-        return
-    
-    if answer in guess or guess in answer:
+    if len(guess) >= 3 and (guess in answer or answer in guess):
         uid = m.from_user.id
         if uid not in state["scores"]:
             state["scores"][uid] = [m.from_user.mention, 0]
         
         state["scores"][uid][1] += 10
-        try:
-            await db.add_quiz_score(uid, 10)
-        except Exception as e:
-            logger.error(f"Quiz score update error: {e}")
+        try: await db.add_quiz_score(uid, 10)
+        except: pass
         
         state["answer"] = None 
         state["winner_found"].set()
-        await m.reply_text(f"🎉 <b>Tᴇʙʀɪᴋʟᴇʀ {m.from_user.mention}!</b> Dᴏɢ̆ʀᴜ ʙɪʟᴅɪɴ ᴠᴇ <b>+10</b> ᴘᴜᴀɴ ᴋᴀᴢᴀɴᴅɪɴ!")
-
-
+        await m.reply_text(f"🎉 <b>Tᴇʙʀɪᴋʟᴇʀ {m.from_user.mention}!</b>\n\nDᴏᴅ̆ʀᴜ ʙɪʟᴅɪɴ ᴠᴇ <b>+10</b> ᴘᴜᴀɴ ᴋᴀᴢᴀɴᴅɪɴ!")
