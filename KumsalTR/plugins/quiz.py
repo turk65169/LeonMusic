@@ -178,7 +178,7 @@ async def get_snippet(name, vid_id=None):
                     "nocheckcertificate": True,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["web", "mweb", "tvhtml5"],
+                            "player_client": ["android", "ios"],
                             "player_skip": ["webpage", "configs"],
                             "skip": ["dash", "hls"],
                         }
@@ -445,4 +445,4 @@ async def quiz_answer_hndlr(_, m: types.Message):
         
         state["answer"] = None 
         state["winner_found"].set()
-        await m.reply_text(f"🎉 <b>Tᴇʙʀɪᴋʟᴇʀ {m.from_user.mention}!</b>\n\nDᴏᴅ̆ʀᴜ ʙɪʟᴅɪɴ ᴠᴇ <b>+10</b> ᴘᴜᴀɴ ᴋᴀᴢᴀɴᴅɪɴ!")
+        await m.reply_text(f"🎉 <b>
