@@ -1,4 +1,4 @@
- @The_Team_kumsal tarafından yasal olarak geliştirildi keyifli kullanımlar #kumsalteam
+# @The_Team_kumsal tarafından yasal olarak geliştirildi keyifli kullanımlar #kumsalteam
 
 import os
 from pyrogram import filters, types
@@ -12,7 +12,7 @@ async def update_cookie(_, m: types.Message):
     
     doc = m.reply_to_message.document
     if not doc.file_name.endswith(".txt"):
-         return await m.reply_text("<b>❌ Dᴏsʏᴀ .ᴛxᴛ ғᴏʀᴍᴀᴛɪɴᴅᴀ ᴏʟᴍᴀʟɪᴅɪʀ.</b>")
+        return await m.reply_text("<b>❌ Dᴏsʏᴀ .ᴛxᴛ ғᴏʀᴍᴀᴛɪɴᴅᴀ ᴏʟᴍᴀʟɪᴅɪʀ.</b>")
     
     sent = await m.reply_text("<b>🔄 Çᴇʀᴇᴢʟᴇʀ ɪşʟᴇɴɪʏᴏʀ...</b>")
     
@@ -33,6 +33,8 @@ async def update_cookie(_, m: types.Message):
 @app.on_message(filters.command(["clearcache"]) & filters.user(config.OWNER_ID))
 async def clear_cache_cmd(_, m: types.Message):
     count = 0
+    if not os.path.exists("downloads"):
+        os.makedirs("downloads")
     for file in os.listdir("downloads"):
         try:
             os.remove(f"downloads/{file}")
