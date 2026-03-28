@@ -50,6 +50,14 @@ async def main() -> None:
     await userbot.boot()
     await anon.boot()
     
+    # Otomatik çerez güncelleme (eğer yapılandırılmışsa)
+    if config.COOKIES_URL:
+        try:
+            await yt.save_cookies(config.COOKIES_URL)
+            yt.checked = False # Çerezlerin yeniden taranmasını sağla
+        except Exception as e:
+            logger.warning(f"Otomatik çerez güncelleme başarısız: {e}")
+
     # Railway vb. servisler için dummy web server başlatılıyor.
     # Aksi takdirde port bağlamadığı için container 60sn sonra öldürülür.
     await start_webserver()
