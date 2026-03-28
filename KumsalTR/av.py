@@ -86,22 +86,23 @@ async def dice(c, m: Message):
 BORED_API_URL = "https://apis.scrimba.com/bored/api/activity"
 
 
+import aiohttp
+
 @app.on_message(filters.command("bored", prefixes=["/"]))
 async def bored_command(client, message: Message):
     try:
-        response = requests.get(BORED_API_URL, timeout=10)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(BORED_API_URL, timeout=10) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    activity = data.get("activity")
+                    if activity:
+                        await message.reply(f"Canın mı sıkıldı? Şunu dene:\n\n{activity}")
+                    else:
+                        await message.reply("Etkinlik bulunamadı.")
+                else:
+                    await message.reply("Etkinlik alınamadı.")
     except Exception:
-        await message.reply("Etkinlik alınamadı.")
-        return
-
-    if response.status_code == 200:
-        data = response.json()
-        activity = data.get("activity")
-        if activity:
-            await message.reply(f"Canın mı sıkıldı? Şunu dene:\n\n{activity}")
-        else:
-            await message.reply("Etkinlik bulunamadı.")
-    else:
         await message.reply("Etkinlik alınamadı.")
 
 
