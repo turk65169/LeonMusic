@@ -618,7 +618,7 @@ async def _eros(client: app, message: Message):
     if lastUpdate:
         now = dt.now()
         diff = now - lastUpdate
-        if diff.seconds > 3600 * 4:
+        if diff.total_seconds() > 3600 * 4:
             msg = await message.reply(
                 "Aşıklar listesi güncelleniyor, lütfen bekleyiniz..."
             )
