@@ -100,6 +100,28 @@ class YouTube:
             pass
         return tracks
 
+    def get_cookies(self):
+        if not self.checked:
+            self.cookies = []
+            if not os.path.exists("KumsalTR/cookies"):
+                os.makedirs("KumsalTR/cookies")
+            
+            for file in os.listdir("KumsalTR/cookies"):
+                if file.endswith(".txt"):
+                    path = os.path.join("KumsalTR/cookies", file)
+                    # Basit doğrulama: Netscape formatı kontrolü
+                    try:
+                        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read(512)
+                            if "# Netscape" in content or "youtube.com" in content:
+                                self.cookies.append(path)
+                            else:
+                                logger.warning(f"Geçersiz çerez formatı (atlandı): {file}")
+                    except Exception as e:
+                        logger.error(f"Çerez okuma hatası {file}: {e}")
+            self.checked = True
+        return self.cookies
+
     async def download(self, video_id: str, video: bool = False) -> str | None:
         url = self.base + video_id
         ext = "mp4" if video else "webm"
@@ -117,8 +139,10 @@ class YouTube:
             "best",
         ]
 
-        attempts = [None] + self.cookies
+        # Deneme sırası: Taze çerezler -> Cookiesiz -> Tüm çerezler (random)
+        attempts = list(self.cookies)
         random.shuffle(attempts)
+        attempts = [None] + attempts # Önce cookiesiz denemek bazen daha iyidir (IP temizse)
 
         for cookie in attempts:
             for fmt in format_attempts:
@@ -148,14 +172,21 @@ class YouTube:
                         with yt_dlp.YoutubeDL(_opts) as ydl:
                             ydl.download([_url])
 
-                    await asyncio.to_thread(_dl)
+                    await asyncio.wait_for(asyncio.to_thread(_dl), timeout=60)
                     if os.path.exists(filename):
                         return filename
                     for f in Path("downloads").glob(f"{video_id}.*"):
                         return str(f)
                 except Exception as e:
-                    logger.debug(f"Download error: {e}")
+                    err_str = str(e).lower()
+                    if "sign in to confirm" in err_str or "unsupported" in err_str:
+                        if cookie and cookie in self.cookies:
+                            logger.warning(f"Hatalı/Süresi dolmuş çerez tespit edildi: {cookie}")
+                            try:
+                                self.cookies.remove(cookie)
+                                os.remove(cookie) # Bozuk dosyayı sil
+                            except: pass
+                        break # Bu çerez ile devam etme, sonrakine geç
                     continue
 
         return None
-
