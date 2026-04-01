@@ -20,9 +20,11 @@ class Downloader:
             "quiet": True,
             "no_warnings": True,
             "outtmpl": "downloads/%(title).50s_%(id)s.%(ext)s",
-            "format": "best",
+            "format": "bestaudio/best",
             "geo_bypass": True,
             "nocheckcertificate": True,
+            "concurrent_fragment_downloads": 10,
+            "socket_timeout": 10,
             "extractor_args": {
                 "youtube": {
                     "player_client": ["android", "web"],
@@ -163,5 +165,3 @@ async def auto_dl(_, m: types.Message):
         logger.error(f"Auto download error: {e}")
         try:
             await sent.delete()
-        except Exception:
-            pass
