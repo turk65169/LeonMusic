@@ -176,10 +176,18 @@ async def get_snippet(name, vid_id=None):
                     "cookiefile": cookie,
                     "geo_bypass": True,
                     "nocheckcertificate": True,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["android", "web"],
+                            "skip": ["web_safari", "ios"]
+                        }
+                    },
                     "http_headers": {
                         "User-Agent": agent,
-                        "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-                        "Sec-Ch-Ua-Platform": "\"Windows\"",
+                        "Accept-Language": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                        "Connection": "keep-alive",
+                        "Upgrade-Insecure-Requests": "1",
                     }
                 }
                 def _dl(_o=opts, _u=url):
@@ -448,5 +456,6 @@ async def end_quiz_early_cmd(_, m: types.Message):
         QUIZ_STATE[chat_id]["winner_found"].set()
         await m.reply_text("<b>🛑 Yarışma erken sonlandırıldı!</b>")
         await end_quiz_logic(chat_id)
+
 
 
