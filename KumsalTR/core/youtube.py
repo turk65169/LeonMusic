@@ -29,17 +29,20 @@ class YouTube:
     def get_cookies(self):
         if not self.checked:
             self.cookies = []
-            if os.path.exists(self.cookie_dir):
-                for file in os.listdir(self.cookie_dir):
-                    if file.endswith(".txt"):
-                        self.cookies.append(f"{self.cookie_dir}/{file}")
+            if not os.path.exists(self.cookie_dir):
+                os.makedirs(self.cookie_dir)
+            
+            for file in os.listdir(self.cookie_dir):
+                if file.endswith(".txt"):
+                    path = os.path.join(self.cookie_dir, file)
+                    try:
+                        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                            content = f.read(512)
+                            if "# Netscape" in content or "youtube.com" in content:
+                                self.cookies.append(path)
+                    except: pass
             self.checked = True
-        if not self.cookies:
-            if not self.warned:
-                self.warned = True
-                logger.warning("Cookies are missing; YouTube might block the bot.")
-            return None
-        return random.choice(self.cookies)
+        return self.cookies
 
     async def save_cookies(self, urls: list[str]) -> None:
         logger.info("Saving cookies from urls...")
@@ -100,23 +103,6 @@ class YouTube:
             pass
         return tracks
 
-    def get_cookies(self):
-        if not self.checked:
-            self.cookies = []
-            if not os.path.exists("KumsalTR/cookies"):
-                os.makedirs("KumsalTR/cookies")
-            
-            for file in os.listdir("KumsalTR/cookies"):
-                if file.endswith(".txt"):
-                    path = os.path.join("KumsalTR/cookies", file)
-                    try:
-                        with open(path, "r", encoding="utf-8", errors="ignore") as f:
-                            content = f.read(512)
-                            if "# Netscape" in content or "youtube.com" in content:
-                                self.cookies.append(path)
-                    except: pass
-            self.checked = True
-        return self.cookies
 
     async def download(self, video_id: str, video: bool = False) -> str | None:
         url = self.base + video_id
@@ -164,16 +150,19 @@ class YouTube:
                     "geo_bypass": True,
                     "nocheckcertificate": True,
                     "cookiefile": cookie,
+                    "no_warnings": True,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["android", "web"],
+                            "skip": ["web_safari", "ios"]
+                        }
+                    },
                     "http_headers": {
                         "User-Agent": agent,
                         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                         "Accept-Language": "tr-TR,tr;q=0.8,en-US;q=0.5,en;q=0.3",
                         "Connection": "keep-alive",
                         "Upgrade-Insecure-Requests": "1",
-                        "Sec-Fetch-Dest": "document",
-                        "Sec-Fetch-Mode": "navigate",
-                        "Sec-Fetch-Site": "none",
-                        "Sec-Fetch-User": "?1",
                     },
                     "format": fmt,
                 }
@@ -201,6 +190,9 @@ class YouTube:
                         break
                     continue
         return None
+
+
+
 
 
 
