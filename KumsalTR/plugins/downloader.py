@@ -8,6 +8,7 @@ from pyrogram import filters, types, enums
 from KumsalTR import app, yt, lang, logger, config
 from KumsalTR.helpers import utils
 import re
+import random
 
 # Platform regexleri
 RE_MEDIA = re.compile(
@@ -165,3 +166,6 @@ async def auto_dl(_, m: types.Message):
         logger.error(f"Auto download error: {e}")
         try:
             await sent.delete()
+        except Exception:
+            pass
+
